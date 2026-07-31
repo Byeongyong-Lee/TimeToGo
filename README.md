@@ -1,6 +1,15 @@
-# MoEum
+# 나갈시간 (TimeToGo)
 
-React Native 0.86.2 / React 19 / TypeScript 기반 앱. React Native Community CLI 템플릿으로 생성했습니다.
+즐겨찾는 정류장의 버스가 몇 분 뒤 도착하는지 바로 보여주는 앱.
+
+React Native 0.86.2 / React 19 / TypeScript 기반. React Native Community CLI 템플릿으로 생성했습니다.
+
+| | 값 |
+| --- | --- |
+| 프로젝트명 | `TimeToGo` |
+| 표시명 | 나갈시간 |
+| Android `applicationId` | `com.timetogo` |
+| iOS 번들 ID | `com.timetogo` |
 
 ## 처음 실행하기
 
@@ -87,4 +96,4 @@ import { api } from '@/api/client';
 
 ## 주의
 
-`android/`, `ios/` 네이티브 폴더가 포함돼 있습니다. 앱 이름(`MoEum`)은 네이티브 프로젝트명과 번들 ID에 박혀 있어 나중에 바꾸려면 손이 많이 갑니다. 화면에 보이는 이름만 바꾸려면 `app.json`의 `displayName`을 수정하세요.
+`android/`, `ios/` 네이티브 폴더가 포함돼 있습니다. 프로젝트명(`TimeToGo`)은 네이티브 프로젝트명·패키지 경로·번들 ID에 박혀 있어 바꾸려면 손이 많이 갑니다. 화면에 보이는 이름만 바꾸려면 `app.json`의 `displayName`과 `android/app/src/main/res/values/strings.xml`, `ios/TimeToGo/Info.plist`의 `CFBundleDisplayName`을 수정하세요.

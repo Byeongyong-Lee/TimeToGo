@@ -39,7 +39,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>MoEum</Text>
+          <Text style={styles.title}>나갈시간</Text>
           <Text style={styles.subtitle}>계정으로 로그인하세요</Text>
         </View>
 

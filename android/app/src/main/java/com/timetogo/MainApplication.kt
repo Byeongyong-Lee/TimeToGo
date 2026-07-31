@@ -1,4 +1,4 @@
-package com.moeum
+package com.timetogo
 
 import android.app.Application
 import com.facebook.react.PackageList
