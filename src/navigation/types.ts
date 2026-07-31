@@ -1,15 +1,13 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type MainTabParamList = {
-  Home: undefined;
-  Items: undefined;
+  /** 즐겨찾기한 정류장·노선의 도착시간. 앱을 켜면 바로 이 화면입니다. */
+  Favorites: undefined;
   Settings: undefined;
 };
 
 export type RootStackParamList = {
-  Login: undefined;
   MainTabs: NavigatorScreenParams<MainTabParamList>;
-  ItemDetail: { id: string };
 };
 
 declare global {

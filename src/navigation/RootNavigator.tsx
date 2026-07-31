@@ -4,12 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 
 import type { MainTabParamList, RootStackParamList } from '@/navigation/types';
-import HomeScreen from '@/screens/HomeScreen';
-import ItemDetailScreen from '@/screens/ItemDetailScreen';
-import ItemsScreen from '@/screens/ItemsScreen';
-import LoginScreen from '@/screens/LoginScreen';
+import FavoritesScreen from '@/screens/FavoritesScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
-import { selectIsLoggedIn, useAuthStore } from '@/store/authStore';
 import { colors } from '@/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -24,50 +20,32 @@ function MainTabs() {
       }}
     >
       <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ title: '홈' }}
-      />
-      <Tab.Screen
-        name="Items"
-        component={ItemsScreen}
-        options={{ title: '목록' }}
+        name="Favorites"
+        component={FavoritesScreen}
+        options={{ title: '도착', headerShown: false }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ title: '설정' }}
+        options={{ title: '설정', headerShown: false }}
       />
     </Tab.Navigator>
   );
 }
 
 export default function RootNavigator() {
-  const isLoggedIn = useAuthStore(selectIsLoggedIn);
-
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        {isLoggedIn ? (
-          <>
-            <Stack.Screen
-              name="MainTabs"
-              component={MainTabs}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="ItemDetail"
-              component={ItemDetailScreen}
-              options={{ title: '상세' }}
-            />
-          </>
-        ) : (
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ headerShown: false }}
-          />
-        )}
+        {/*
+          정류장 검색 → 노선 선택 화면은 공공데이터포털 API 를 붙일 때
+          이 스택에 추가합니다.
+        */}
+        <Stack.Screen
+          name="MainTabs"
+          component={MainTabs}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

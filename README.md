@@ -58,18 +58,15 @@ npm start
 
 ```
 src/
-├─ api/           서버 통신
-│  ├─ client.ts   axios 인스턴스 + 토큰 인터셉터 + 401 자동 refresh
-│  ├─ auth.ts     로그인 / 내 정보 / 로그아웃
-│  └─ items.ts    리소스 예시 (실제 엔드포인트로 교체하세요)
-├─ components/    Screen, Button, TextField
-├─ config/env.ts  API 주소, 타임아웃
-├─ hooks/         useAsync (로딩·에러·refetch)
-├─ navigation/    RootNavigator, 화면 파라미터 타입
-├─ screens/       Login, Home, Items, ItemDetail, Settings
-├─ store/         zustand 스토어 (authStore)
-├─ theme/         색상·간격·타이포그래피 토큰
-└─ types/         서버 응답 타입
+├─ api/client.ts   TAGO 호출용 axios 인스턴스 + 응답 언래핑 + 에러 메시지
+├─ components/     Screen, Button, TextField
+├─ config/env.ts   TAGO 베이스 URL, 인증키, 타임아웃
+├─ hooks/          useAsync (로딩·에러·refetch)
+├─ navigation/     RootNavigator, 화면 파라미터 타입
+├─ screens/        Favorites(홈), Settings
+├─ store/          zustand 스토어 (favoritesStore)
+├─ theme/          색상·간격·타이포그래피 토큰
+└─ types/bus.ts    정류소·노선·도착·즐겨찾기 도메인 타입
 ```
 
 `@/` 를 `src/` 로 매핑해 뒀습니다. (`babel.config.js` + `tsconfig.json`)
@@ -78,21 +75,28 @@ src/
 import { api } from '@/api/client';
 ```
 
-## 인증 흐름
+## 구조
 
-1. `LoginScreen`에서 `authStore.login()` 호출 → `POST /auth/login`
-2. accessToken / refreshToken / user를 AsyncStorage에 저장 (zustand `persist`)
-3. `RootNavigator`가 토큰 유무로 로그인 화면 ↔ 메인 탭을 전환
-4. API가 401을 주면 `client.ts`가 `POST /auth/refresh`를 1회 시도하고, 실패하면 세션을 비웁니다
+로그인도 자체 서버도 없습니다. 공공데이터포털(TAGO) API 를 앱에서 직접 호출하고, 즐겨찾기만 기기에 저장합니다.
 
-서버 응답 형태가 다르면 `src/types/api.ts`와 `src/api/*.ts`만 고치면 됩니다.
+1. 사용자가 정류장·노선을 즐겨찾기에 등록 → `favoritesStore` 가 AsyncStorage 에 저장 (zustand `persist`)
+2. 앱을 켜면 복원이 끝날 때까지 `App.tsx` 가 스플래시를 보여주고, 이후 `FavoritesScreen` 진입
+3. `FavoritesScreen` 이 즐겨찾기 목록의 도착정보를 조회해서 남은 시간을 표시
+
+### 공공데이터포털 API 주의점
+
+- 인증키는 **Decoding 키**를 `src/config/env.ts` 의 `serviceKey` 에 넣으세요. Encoding 키를 넣으면 axios 가 한 번 더 인코딩해서 인증에 실패합니다
+- 문서에는 `http://` 로 안내돼 있지만 RN 은 평문 http 를 차단하므로 `https://` 로 호출합니다
+- 인증 실패·쿼터 초과도 **HTTP 200 + 에러 본문**으로 옵니다. `unwrapItems()` 가 `resultCode` 를 확인해 `TagoError` 로 던집니다
+- 결과가 없으면 `items` 가 빈 문자열, 1건이면 배열이 아닌 객체로 옵니다. `unwrapItems()` 가 항상 배열로 맞춰줍니다
+- 개발계정은 일 10,000건 제한입니다
 
 ## 다음에 붙이면 좋은 것들
 
-- **@tanstack/react-query** — 캐싱·재검증이 필요해지면. `useAsync`와 인터페이스가 비슷해 교체가 쉽습니다.
-- **react-native-config** — API 주소를 `.env`로 분리
-- **react-native-mmkv** — AsyncStorage보다 빠른 저장소
-- **react-native-vector-icons** — 탭 아이콘
+- **react-native-config** — 인증키를 `.env` 로 분리 (저장소에 키를 커밋하지 않기 위해)
+- **@tanstack/react-query** — 도착정보 폴링·캐싱이 필요해지면. `useAsync` 와 인터페이스가 비슷해 교체가 쉽습니다
+- **react-native-mmkv** — AsyncStorage 보다 빠른 저장소
+- **위젯** — 이 앱의 핵심. RN 으로는 불가능하고 Android(Kotlin/Glance), iOS(Swift/WidgetKit) 로 따로 만들어야 합니다
 
 ## 주의
 
