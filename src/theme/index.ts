@@ -6,6 +6,7 @@ export const colors = {
   textMuted: '#6B7280',
   primary: '#2F6BFF',
   primaryText: '#FFFFFF',
+  success: '#1B9E55',
   danger: '#D83A34',
 } as const;
 

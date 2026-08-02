@@ -4,8 +4,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 
 import type { MainTabParamList, RootStackParamList } from '@/navigation/types';
+import FavoriteAlarmScreen from '@/screens/FavoriteAlarmScreen';
 import FavoritesScreen from '@/screens/FavoritesScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
+import StopRoutesScreen from '@/screens/StopRoutesScreen';
+import StopSearchScreen from '@/screens/StopSearchScreen';
 import { colors } from '@/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -36,15 +39,32 @@ function MainTabs() {
 export default function RootNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        {/*
-          정류장 검색 → 노선 선택 화면은 공공데이터포털 API 를 붙일 때
-          이 스택에 추가합니다.
-        */}
+      <Stack.Navigator
+        screenOptions={{
+          headerTintColor: colors.text,
+          headerTitleStyle: { color: colors.text },
+          headerStyle: { backgroundColor: colors.background },
+        }}
+      >
         <Stack.Screen
           name="MainTabs"
           component={MainTabs}
           options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="StopSearch"
+          component={StopSearchScreen}
+          options={{ title: '정류장 검색' }}
+        />
+        <Stack.Screen
+          name="StopRoutes"
+          component={StopRoutesScreen}
+          options={({ route }) => ({ title: route.params.stop.name })}
+        />
+        <Stack.Screen
+          name="FavoriteAlarm"
+          component={FavoriteAlarmScreen}
+          options={{ title: '알림 설정' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

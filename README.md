@@ -58,15 +58,21 @@ npm start
 
 ```
 src/
-├─ api/client.ts   TAGO 호출용 axios 인스턴스 + 응답 언래핑 + 에러 메시지
+├─ api/
+│  ├─ client.ts      TAGO 호출용 axios 인스턴스 + 응답 언래핑 + 에러 메시지
+│  ├─ busApi.ts      화면이 쓰는 파사드. mock ↔ TAGO 전환 지점
+│  └─ mockBusApi.ts  화면 개발용 샘플 데이터 (정류장·노선·도착시간)
 ├─ components/     Screen, Button, TextField
-├─ config/env.ts   TAGO 베이스 URL, 인증키, 타임아웃
-├─ hooks/          useAsync (로딩·에러·refetch)
+├─ config/env.ts   useMockApi 플래그, TAGO 베이스 URL, 인증키, 타임아웃
+├─ hooks/          useAsync (로딩·에러·refetch), useNow (1초 틱)
 ├─ navigation/     RootNavigator, 화면 파라미터 타입
-├─ screens/        Favorites(홈), Settings
-├─ store/          zustand 스토어 (favoritesStore)
+├─ screens/        Favorites(홈), StopSearch(정류장 검색), StopRoutes(노선 선택),
+│                  FavoriteAlarm(알림 세부 설정), Settings
+├─ store/          zustand 스토어 (favoritesStore, persist v1)
 ├─ theme/          색상·간격·타이포그래피 토큰
-└─ types/bus.ts    정류소·노선·도착·즐겨찾기 도메인 타입
+└─ types/
+   ├─ bus.ts       정류소·노선·도착·즐겨찾기 도메인 타입
+   └─ alarm.ts     알림 설정 타입 + 활성 시간대 판정 (isAlarmActiveAt)
 ```
 
 `@/` 를 `src/` 로 매핑해 뒀습니다. (`babel.config.js` + `tsconfig.json`)
@@ -75,6 +81,18 @@ src/
 import { api } from '@/api/client';
 ```
 
+## 목데이터 모드
+
+공공데이터포털 인증키가 없어도 앱 전체 플로우(검색 → 노선 등록 → 홈 도착시간)가 돌아가도록 `src/api/mockBusApi.ts` 에 샘플 데이터가 들어 있습니다. `src/config/env.ts` 의 `useMockApi` 가 `true` 면 목데이터를 씁니다.
+
+실제 API 로 전환하려면:
+
+1. `src/api/busApi.ts` 의 `tagoBusApi` 를 `api/client.ts` 의 `api` + `unwrapItems()` 로 구현
+2. `env.serviceKey` 에 Decoding 키 입력
+3. `env.useMockApi` 를 `false` 로 변경
+
+화면 코드는 `busApi` 파사드만 바라보므로 전환 시 수정할 필요가 없습니다.
+
 ## 구조
 
 로그인도 자체 서버도 없습니다. 공공데이터포털(TAGO) API 를 앱에서 직접 호출하고, 즐겨찾기만 기기에 저장합니다.
@@ -82,6 +100,17 @@ import { api } from '@/api/client';
 1. 사용자가 정류장·노선을 즐겨찾기에 등록 → `favoritesStore` 가 AsyncStorage 에 저장 (zustand `persist`)
 2. 앱을 켜면 복원이 끝날 때까지 `App.tsx` 가 스플래시를 보여주고, 이후 `FavoritesScreen` 진입
 3. `FavoritesScreen` 이 즐겨찾기 목록의 도착정보를 조회해서 남은 시간을 표시
+
+### 알림 설정 (활성/비활성)
+
+즐겨찾기마다 알림 설정(`Favorite.alarm`)이 있습니다. 홈에서 항목을 탭하면 설정 화면이 열립니다.
+
+- **알림 사용** 토글 — 꺼도 목록에는 보이고 알림만 가지 않습니다
+- **요일 + 활성 시간대** (예: 평일 07:00~07:20) — 이 조건에 들어왔을 때만 "활성"
+- **알림 주기** — 30초 / 1분마다 도착정보를 확인해 푸시
+- **알림 시작** — 남은 시간이 N분 이하로 내려오면 푸시 시작
+
+활성 여부 판정은 `isAlarmActiveAt()` (`src/types/alarm.ts`, 테스트 있음). 설정은 저장되지만 실제 OS 푸시 발송 모듈(notifee 등)은 아직 연동 전입니다.
 
 ### 공공데이터포털 API 주의점
 

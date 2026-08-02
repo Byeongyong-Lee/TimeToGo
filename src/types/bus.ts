@@ -42,6 +42,8 @@ export type Arrival = {
   stopsLeft?: number;
 };
 
+import type { FavoriteAlarm } from '@/types/alarm';
+
 /**
  * 즐겨찾기 = "이 정류장에서 이 노선".
  * 앱의 핵심 단위. 홈 화면은 이 목록의 도착정보만 보여줍니다.
@@ -55,6 +57,8 @@ export type Favorite = {
   stopName: string;
   routeId: string;
   routeNo: string;
+  /** 요일·시간대·알림 주기 설정 */
+  alarm: FavoriteAlarm;
   /** 정렬용. ISO 8601 */
   createdAt: string;
 };

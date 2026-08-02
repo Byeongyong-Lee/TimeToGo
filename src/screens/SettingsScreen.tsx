@@ -17,6 +17,15 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.label}>데이터 모드</Text>
+        <Text style={styles.value}>
+          {env.useMockApi
+            ? '샘플 데이터 (공공데이터포털 연동 전)'
+            : '실시간 (TAGO)'}
+        </Text>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.label}>인증키</Text>
         <Text style={styles.value}>
           {env.serviceKey ? '설정됨' : '설정되지 않음'}

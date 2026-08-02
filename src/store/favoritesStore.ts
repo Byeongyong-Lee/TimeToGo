@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { DEFAULT_ALARM, type FavoriteAlarm } from '@/types/alarm';
 import { favoriteId, type CityCode, type Favorite } from '@/types/bus';
 
 type FavoritesState = {
@@ -24,6 +25,8 @@ type FavoritesActions = {
   /** 드래그 정렬용. 목록 전체를 새 순서로 교체합니다. */
   reorder: (favorites: Favorite[]) => void;
   has: (cityCode: CityCode, nodeId: string, routeId: string) => boolean;
+  /** 알림 설정 부분 수정 */
+  updateAlarm: (id: string, patch: Partial<FavoriteAlarm>) => void;
 };
 
 export const useFavoritesStore = create<FavoritesState & FavoritesActions>()(
@@ -40,6 +43,7 @@ export const useFavoritesStore = create<FavoritesState & FavoritesActions>()(
         const favorite: Favorite = {
           id,
           ...input,
+          alarm: { ...DEFAULT_ALARM, days: [...DEFAULT_ALARM.days] },
           createdAt: new Date().toISOString(),
         };
         set(state => ({ favorites: [...state.favorites, favorite] }));
@@ -56,10 +60,31 @@ export const useFavoritesStore = create<FavoritesState & FavoritesActions>()(
         const id = favoriteId(cityCode, nodeId, routeId);
         return get().favorites.some(f => f.id === id);
       },
+
+      updateAlarm: (id, patch) =>
+        set(state => ({
+          favorites: state.favorites.map(f =>
+            f.id === id ? { ...f, alarm: { ...f.alarm, ...patch } } : f,
+          ),
+        })),
     }),
     {
       name: 'favorites',
       storage: createJSONStorage(() => AsyncStorage),
+      // v1: 즐겨찾기에 알림 설정(alarm)이 추가됐습니다.
+      version: 1,
+      migrate: persisted => {
+        const state = persisted as { favorites?: Favorite[] };
+        return {
+          favorites: (state.favorites ?? []).map(favorite => ({
+            ...favorite,
+            alarm: favorite.alarm ?? {
+              ...DEFAULT_ALARM,
+              days: [...DEFAULT_ALARM.days],
+            },
+          })),
+        };
+      },
       // hydrated 는 휘발성이라 저장하지 않습니다.
       partialize: state => ({ favorites: state.favorites }),
       onRehydrateStorage: () => () => {

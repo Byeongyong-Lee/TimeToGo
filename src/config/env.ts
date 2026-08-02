@@ -13,6 +13,11 @@
  */
 
 export const env = {
+  /**
+   * true 면 실제 API 대신 src/api/mockBusApi.ts 의 샘플 데이터를 사용합니다.
+   * 공공데이터포털 인증키를 받으면 false 로 바꾸고 serviceKey 를 채우세요.
+   */
+  useMockApi: true as boolean,
   /** TAGO 오픈API 베이스. 서비스별 경로는 각 api 모듈에서 붙입니다. */
   tagoBaseUrl: 'https://apis.data.go.kr/1613000',
   /** 공공데이터포털 Decoding 인증키. 비어 있으면 API 호출이 실패합니다. */
