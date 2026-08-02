@@ -7,6 +7,7 @@ import {
   tickAlarms,
 } from '@/notifications/alarmEngine';
 import {
+  scheduleServiceStart,
   startArrivalService,
   stopArrivalService,
 } from '@/notifications/foregroundService';
@@ -105,14 +106,20 @@ export function useArrivalAlarms() {
   }, []);
 }
 
-/** 서비스가 필요하면 올리고, 필요 없으면 내립니다. */
+/**
+ * 서비스가 필요하면 올리고, 필요 없으면 내린 뒤 다음 활성 시간대 시작에
+ * AlarmManager 예약을 걸어둡니다. 예약 덕분에 앱을 완전히 꺼둬도
+ * 다음 시간대에 서비스가 스스로 깨어납니다.
+ */
 async function manageService(): Promise<void> {
+  // 상시 알림·예약 알림 모두 알림 권한이 필요합니다.
+  if (!(await ensureNotificationPermission())) {
+    return;
+  }
   if (shouldServiceRun()) {
-    // 상시 알림을 띄워야 하므로 권한이 없으면 시작하지 않습니다.
-    if (await ensureNotificationPermission()) {
-      await startArrivalService();
-    }
+    await startArrivalService();
   } else {
     await stopArrivalService();
+    await scheduleServiceStart();
   }
 }

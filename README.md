@@ -120,9 +120,10 @@ import { api } from '@/api/client';
 
 플랫폼별 실행 방식:
 
-- **Android — 포그라운드 서비스.** `useArrivalAlarms` 가 "활성 시간대이거나 60분 안에 시작"이면 상시 알림("버스 도착 확인 중")을 띄운 포그라운드 서비스를 올리고, 서비스 안에서 30초 틱이 돕니다. 덕분에 **앱이 백그라운드거나 화면이 꺼져도 알림이 옵니다.** 시간대가 끝나면 서비스가 스스로 내려갑니다. 서비스 본체는 `index.js` 에서 등록합니다.
-  - 매니페스트: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC` 권한 + `app.notifee.core.ForegroundService` (`dataSync` 타입, targetSdk 34+ 필수)
-  - 한계: 앱 프로세스가 완전히 죽은 상태에서 정해진 시간에 스스로 깨어나는 예약 실행은 미지원. 활성 시간대 앞뒤로 앱을 한 번 열면 서비스가 이어받습니다. (완전 자동화는 AlarmManager 트리거나 서버 푸시가 필요)
+- **Android — 포그라운드 서비스 + AlarmManager 예약 기동.** `useArrivalAlarms` 가 "활성 시간대이거나 60분 안에 시작"이면 상시 알림("버스 도착 확인 중")을 띄운 포그라운드 서비스를 올리고, 서비스 안에서 30초 틱이 돕니다. 덕분에 **앱이 백그라운드거나 화면이 꺼져도 알림이 옵니다.** 시간대가 끝나면 서비스가 스스로 내려가면서 다음 시작 시각에 notifee 트리거 알림(AlarmManager)을 예약합니다 — **앱 프로세스가 죽어 있어도 다음 활성 시간대에 서비스가 스스로 깨어납니다.** 예약은 notifee 가 저장하므로 재부팅 후에도 유지됩니다. 서비스 본체는 `index.js` 에서 등록합니다.
+  - 매니페스트: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `SCHEDULE_EXACT_ALARM` 권한 + `app.notifee.core.ForegroundService` (`dataSync` 타입, targetSdk 34+ 필수)
+  - 정확한 알람(`SCHEDULE_EXACT_ALARM`)은 Android 12+ 특수 권한이라 사용자가 설정에서 허용해야 제시간에 깨어납니다 (미허용 시 수 분 지연 가능). 설정 화면에 상태 표시와 바로가기를 넣어뒀습니다
+  - 다음 시작 시각 계산은 `nextAlarmStart()` (`src/types/alarm.ts`, 테스트 있음)
 - **iOS — 인앱 폴링.** 포그라운드 서비스 개념이 없어 앱이 떠 있는 동안만 알림이 동작합니다. macOS 에서 `pod install` 후 빌드 필요.
 
 네이티브 모듈이라 설치·매니페스트 변경 후에는 `npm run android` 로 재빌드해야 합니다 (Metro 리로드만으로는 안 됨).

@@ -67,6 +67,42 @@ export function alarmStartsWithin(
   return diff > 0 && diff <= leadMinutes;
 }
 
+/**
+ * 여러 알람 중 가장 이른 "다음 활성 구간 시작 시각"을 구합니다.
+ *
+ * AlarmManager 예약 기동(포그라운드 서비스를 그 시각에 깨우기)에 씁니다.
+ * from 이후(미포함)로 7일 안에 시작되는 구간이 없으면 null 입니다.
+ */
+export function nextAlarmStart(
+  alarms: FavoriteAlarm[],
+  from: Date,
+): Date | null {
+  let best: Date | null = null;
+  for (const alarm of alarms) {
+    if (!alarm.enabled || alarm.days.length === 0) {
+      continue;
+    }
+    for (let offset = 0; offset <= 7; offset += 1) {
+      const candidate = new Date(from);
+      candidate.setDate(candidate.getDate() + offset);
+      candidate.setHours(
+        Math.floor(alarm.startMinutes / 60),
+        alarm.startMinutes % 60,
+        0,
+        0,
+      );
+      if (candidate <= from || !alarm.days.includes(candidate.getDay())) {
+        continue;
+      }
+      if (!best || candidate < best) {
+        best = candidate;
+      }
+      break; // 이 알람의 가장 이른 시작을 찾았으니 다음 알람으로
+    }
+  }
+  return best;
+}
+
 /** 자정 기준 분 → "07:00" */
 export function formatMinutesOfDay(minutes: number): string {
   const h = Math.floor(minutes / 60) % 24;

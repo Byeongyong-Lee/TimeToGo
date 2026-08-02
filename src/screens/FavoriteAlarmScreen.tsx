@@ -216,8 +216,8 @@ export default function FavoriteAlarmScreen() {
           </Text>
           <Text style={styles.summaryNote}>
             활성 시간대에는 상단에 "버스 도착 확인 중" 알림이 떠 있는 동안
-            백그라운드에서도 푸시가 옵니다. 앱을 완전히 종료하면 다음에 열 때까지
-            알림이 오지 않습니다.
+            백그라운드에서도 푸시가 옵니다. 앱을 꺼두어도 다음 활성 시간대
+            시작에 맞춰 자동으로 확인을 시작합니다.
           </Text>
         </View>
 

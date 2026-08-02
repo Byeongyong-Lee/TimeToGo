@@ -4,7 +4,11 @@ import {
   notifyArrival,
 } from '@/notifications/notifier';
 import { useFavoritesStore } from '@/store/favoritesStore';
-import { alarmStartsWithin, isAlarmActiveAt } from '@/types/alarm';
+import {
+  alarmStartsWithin,
+  isAlarmActiveAt,
+  nextAlarmStart,
+} from '@/types/alarm';
 import type { Arrival, Favorite } from '@/types/bus';
 
 /**
@@ -49,6 +53,14 @@ export function shouldServiceRun(date: Date = new Date()): boolean {
     favorite =>
       isAlarmActiveAt(favorite.alarm, date) ||
       alarmStartsWithin(favorite.alarm, date, SERVICE_LEAD_MINUTES),
+  );
+}
+
+/** 다음 활성 구간 시작 시각. AlarmManager 예약 기동용. */
+export function nextServiceStart(from: Date = new Date()): Date | null {
+  return nextAlarmStart(
+    getFavorites().map(favorite => favorite.alarm),
+    from,
   );
 }
 

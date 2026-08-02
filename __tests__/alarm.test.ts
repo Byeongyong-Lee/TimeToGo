@@ -8,6 +8,7 @@ import {
   formatAlarmDays,
   formatMinutesOfDay,
   isAlarmActiveAt,
+  nextAlarmStart,
   type FavoriteAlarm,
 } from '@/types/alarm';
 
@@ -77,6 +78,36 @@ describe('alarmStartsWithin', () => {
       false,
     );
     expect(alarmStartsWithin(alarm(), sunday(6, 30), 60)).toBe(false);
+  });
+});
+
+describe('nextAlarmStart', () => {
+  test('오늘 시작 전이면 오늘 시작 시각을 돌려준다', () => {
+    const next = nextAlarmStart([alarm()], monday(6, 0));
+    expect(next?.getDay()).toBe(1);
+    expect(next?.getHours()).toBe(7);
+    expect(next?.getMinutes()).toBe(0);
+  });
+
+  test('오늘 시작이 지났으면 다음 해당 요일로 넘어간다', () => {
+    // 월요일 전용 알람을 월요일 7:30 에 조회 → 다음 주 월요일
+    const next = nextAlarmStart([alarm()], monday(7, 30));
+    expect(next?.getDay()).toBe(1);
+    expect(next?.getTime()).toBe(monday(7, 0).getTime() + 7 * 24 * 3600 * 1000);
+  });
+
+  test('여러 알람 중 가장 이른 시작을 고른다', () => {
+    const next = nextAlarmStart(
+      [alarm({ startMinutes: 9 * 60 }), alarm({ startMinutes: 8 * 60 })],
+      monday(6, 0),
+    );
+    expect(next?.getHours()).toBe(8);
+  });
+
+  test('켜진 알람이 없으면 null 이다', () => {
+    expect(nextAlarmStart([alarm({ enabled: false })], monday(6, 0))).toBeNull();
+    expect(nextAlarmStart([alarm({ days: [] })], monday(6, 0))).toBeNull();
+    expect(nextAlarmStart([], monday(6, 0))).toBeNull();
   });
 });
 
