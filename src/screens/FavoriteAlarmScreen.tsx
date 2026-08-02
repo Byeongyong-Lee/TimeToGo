@@ -215,7 +215,8 @@ export default function FavoriteAlarmScreen() {
             간격
           </Text>
           <Text style={styles.summaryNote}>
-            실제 푸시 발송은 알림 모듈 연동 후 동작합니다. 설정은 지금 저장됩니다.
+            앱이 실행 중일 때 조건이 맞으면 푸시가 옵니다. 앱을 완전히 끈
+            상태의 알림은 아직 지원하지 않습니다.
           </Text>
         </View>
 

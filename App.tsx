@@ -9,11 +9,15 @@ import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import RootNavigator from '@/navigation/RootNavigator';
+import { useArrivalAlarms } from '@/notifications/useArrivalAlarms';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { colors } from '@/theme';
 
 function App() {
   const hydrated = useFavoritesStore(state => state.hydrated);
+
+  // 활성 시간대의 즐겨찾기를 폴링해서 도착 푸시를 띄웁니다 (앱이 떠 있는 동안).
+  useArrivalAlarms();
 
   useEffect(() => {
     // persist 미들웨어가 복원을 마치면 hydrated 가 true 가 됩니다.

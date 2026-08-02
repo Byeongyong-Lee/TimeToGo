@@ -66,6 +66,7 @@ src/
 ├─ config/env.ts   useMockApi 플래그, TAGO 베이스 URL, 인증키, 타임아웃
 ├─ hooks/          useAsync (로딩·에러·refetch), useNow (1초 틱)
 ├─ navigation/     RootNavigator, 화면 파라미터 타입
+├─ notifications/  notifier (notifee 래퍼), useArrivalAlarms (폴링 스케줄러)
 ├─ screens/        Favorites(홈), StopSearch(정류장 검색), StopRoutes(노선 선택),
 │                  FavoriteAlarm(알림 세부 설정), Settings
 ├─ store/          zustand 스토어 (favoritesStore, persist v1)
@@ -110,7 +111,16 @@ import { api } from '@/api/client';
 - **알림 주기** — 30초 / 1분마다 도착정보를 확인해 푸시
 - **알림 시작** — 남은 시간이 N분 이하로 내려오면 푸시 시작
 
-활성 여부 판정은 `isAlarmActiveAt()` (`src/types/alarm.ts`, 테스트 있음). 설정은 저장되지만 실제 OS 푸시 발송 모듈(notifee 등)은 아직 연동 전입니다.
+활성 여부 판정은 `isAlarmActiveAt()` (`src/types/alarm.ts`, 테스트 있음).
+
+### 푸시 알림 (notifee)
+
+`useArrivalAlarms` 훅(App.tsx 에서 마운트)이 30초 기본 틱으로 돌면서, 활성 상태이고 알림 주기가 지난 즐겨찾기의 도착정보를 조회해 조건(남은 시간 ≤ N분)이 맞으면 `@notifee/react-native` 로 로컬 푸시를 띄웁니다.
+
+- 알림 id = 즐겨찾기 id 라서 같은 노선 알림은 쌓이지 않고 갱신됩니다
+- 첫 알림 시점에 시스템 알림 권한을 요청합니다 (Android 13+ `POST_NOTIFICATIONS` 매니페스트 등록됨)
+- **앱이 떠 있는 동안만 동작합니다.** OS 가 백그라운드 JS 타이머를 멈추기 때문에, 화면을 끈 상태의 알림은 Android 포그라운드 서비스(또는 서버 푸시)가 필요합니다 — 다음 단계
+- 네이티브 모듈이라 설치 후 `npm run android` 로 앱을 다시 빌드해야 합니다 (Metro 리로드만으로는 안 됨). iOS 는 macOS 에서 `pod install` 필요
 
 ### 공공데이터포털 API 주의점
 
