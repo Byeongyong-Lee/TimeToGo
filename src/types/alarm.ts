@@ -48,6 +48,25 @@ export function isAlarmActiveAt(alarm: FavoriteAlarm, date: Date): boolean {
   return start <= end ? t >= start && t <= end : t >= start || t <= end;
 }
 
+/**
+ * 지금부터 leadMinutes 안에 활성 구간이 시작되는지 (오늘 요일 기준).
+ *
+ * 포그라운드 서비스를 "곧 시작될 시간대"에 미리 띄워두기 위해 씁니다.
+ * 이미 활성인 경우는 isAlarmActiveAt 이 담당하므로 여기서는 false 입니다.
+ */
+export function alarmStartsWithin(
+  alarm: FavoriteAlarm,
+  date: Date,
+  leadMinutes: number,
+): boolean {
+  if (!alarm.enabled || !alarm.days.includes(date.getDay())) {
+    return false;
+  }
+  const t = date.getHours() * 60 + date.getMinutes();
+  const diff = alarm.startMinutes - t;
+  return diff > 0 && diff <= leadMinutes;
+}
+
 /** 자정 기준 분 → "07:00" */
 export function formatMinutesOfDay(minutes: number): string {
   const h = Math.floor(minutes / 60) % 24;

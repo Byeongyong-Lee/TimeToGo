@@ -1,40 +1,34 @@
 import { useEffect, useRef } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
-import { busApi } from '@/api/busApi';
+import {
+  BASE_TICK_MS,
+  shouldServiceRun,
+  tickAlarms,
+} from '@/notifications/alarmEngine';
+import {
+  startArrivalService,
+  stopArrivalService,
+} from '@/notifications/foregroundService';
 import {
   cancelArrivalNotification,
   ensureNotificationPermission,
-  notifyArrival,
 } from '@/notifications/notifier';
 import { selectFavorites, useFavoritesStore } from '@/store/favoritesStore';
-import { isAlarmActiveAt } from '@/types/alarm';
-import type { Arrival, Favorite } from '@/types/bus';
 
 /**
- * 즐겨찾기 알림 스케줄러.
+ * 즐겨찾기 알림 관리 훅. App.tsx 에서 한 번 마운트합니다.
  *
- * 30초 간격의 기본 틱마다:
- * 1. 지금 활성(요일·시간대 일치)이면서, 각자의 알림 주기(30초/1분)가
- *    지난 즐겨찾기를 고른다
- * 2. 해당 정류장들의 도착정보를 조회한다
- * 3. 남은 시간이 "알림 시작(N분)" 이하로 내려온 노선에 푸시를 띄운다
- *
- * OS 가 백그라운드에서 JS 타이머를 멈추기 때문에 이 폴링은 앱이 떠 있는
- * 동안만 돕니다. 화면이 꺼진 상태의 알림은 Android 포그라운드 서비스나
- * 서버 푸시가 필요해서 다음 단계로 미뤄뒀습니다.
+ * - Android: 실제 폴링·푸시는 포그라운드 서비스가 담당하고, 이 훅은
+ *   "활성이거나 곧 시작될 즐겨찾기가 있는지"를 보고 서비스를 올리고 내리는
+ *   역할만 합니다. 서비스 덕분에 앱이 백그라운드로 가도 알림이 옵니다.
+ * - iOS: 포그라운드 서비스 개념이 없어서 앱이 떠 있는 동안만
+ *   인앱 폴링(tickAlarms)으로 알림을 띄웁니다.
  */
-
-const BASE_TICK_MS = 30_000;
-
 export function useArrivalAlarms() {
   const favorites = useFavoritesStore(selectFavorites);
 
-  // 틱 콜백이 항상 최신 목록을 보도록 ref 로 넘깁니다.
-  const favoritesRef = useRef(favorites);
-  favoritesRef.current = favorites;
-
-  /** 즐겨찾기별 마지막 알림 시각 (epoch ms) */
+  /** 즐겨찾기별 마지막 알림 시각 (iOS 인앱 폴링용, epoch ms) */
   const lastNotifiedRef = useRef<Record<string, number>>({});
 
   // 삭제된 즐겨찾기의 떠 있는 알림을 치웁니다.
@@ -50,62 +44,28 @@ export function useArrivalAlarms() {
     prevIdsRef.current = ids;
   }, [favorites]);
 
+  // 즐겨찾기·설정이 바뀌면 서비스 필요 여부를 바로 재평가합니다 (Android).
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+    manageService();
+  }, [favorites]);
+
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null;
     let running = false;
 
     const tick = async () => {
       if (running) {
-        return; // 이전 틱의 조회가 아직 안 끝났으면 건너뜁니다.
+        return; // 이전 틱이 아직 안 끝났으면 건너뜁니다.
       }
       running = true;
       try {
-        const now = Date.now();
-        const date = new Date(now);
-        const due = favoritesRef.current.filter(
-          favorite =>
-            isAlarmActiveAt(favorite.alarm, date) &&
-            now - (lastNotifiedRef.current[favorite.id] ?? 0) >=
-              favorite.alarm.intervalSec * 1000,
-        );
-        if (due.length === 0) {
-          return;
-        }
-        if (!(await ensureNotificationPermission())) {
-          return;
-        }
-
-        // 같은 정류장은 한 번만 조회합니다.
-        const stops = new Map<string, Favorite>();
-        for (const favorite of due) {
-          stops.set(`${favorite.cityCode}:${favorite.nodeId}`, favorite);
-        }
-        const arrivalsByStop = new Map<string, Arrival[]>();
-        await Promise.all(
-          [...stops.values()].map(async stop => {
-            try {
-              arrivalsByStop.set(
-                `${stop.cityCode}:${stop.nodeId}`,
-                await busApi.getArrivals(stop.cityCode, stop.nodeId),
-              );
-            } catch {
-              // 조회 실패는 다음 틱에 다시 시도합니다.
-            }
-          }),
-        );
-
-        for (const favorite of due) {
-          const first = arrivalsByStop
-            .get(`${favorite.cityCode}:${favorite.nodeId}`)
-            ?.filter(arrival => arrival.routeId === favorite.routeId)
-            .sort((a, b) => a.secondsLeft - b.secondsLeft)[0];
-          if (
-            first &&
-            first.secondsLeft <= favorite.alarm.notifyFromMinutes * 60
-          ) {
-            lastNotifiedRef.current[favorite.id] = now;
-            await notifyArrival(favorite, first);
-          }
+        if (Platform.OS === 'android') {
+          await manageService();
+        } else {
+          await tickAlarms(lastNotifiedRef.current);
         }
       } finally {
         running = false;
@@ -125,6 +85,8 @@ export function useArrivalAlarms() {
       }
     };
 
+    // 이 틱은 앱이 화면에 떠 있을 때만 돕니다. Android 는 백그라운드에서도
+    // 포그라운드 서비스가 자체 틱으로 계속 돌고, 시간대가 끝나면 스스로 내려갑니다.
     const subscription = AppState.addEventListener('change', state => {
       if (state === 'active') {
         start();
@@ -141,4 +103,16 @@ export function useArrivalAlarms() {
       stop();
     };
   }, []);
+}
+
+/** 서비스가 필요하면 올리고, 필요 없으면 내립니다. */
+async function manageService(): Promise<void> {
+  if (shouldServiceRun()) {
+    // 상시 알림을 띄워야 하므로 권한이 없으면 시작하지 않습니다.
+    if (await ensureNotificationPermission()) {
+      await startArrivalService();
+    }
+  } else {
+    await stopArrivalService();
+  }
 }

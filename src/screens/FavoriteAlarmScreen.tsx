@@ -215,8 +215,9 @@ export default function FavoriteAlarmScreen() {
             간격
           </Text>
           <Text style={styles.summaryNote}>
-            앱이 실행 중일 때 조건이 맞으면 푸시가 옵니다. 앱을 완전히 끈
-            상태의 알림은 아직 지원하지 않습니다.
+            활성 시간대에는 상단에 "버스 도착 확인 중" 알림이 떠 있는 동안
+            백그라운드에서도 푸시가 옵니다. 앱을 완전히 종료하면 다음에 열 때까지
+            알림이 오지 않습니다.
           </Text>
         </View>
 

@@ -3,6 +3,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13(API 33)+ 알림 표시 권한. 앱에서 notifee.requestPermission() 으로 요청합니다. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 활성 시간대 동안 백그라운드에서 도착정보를 폴링하는 포그라운드 서비스용 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
       android:name=".MainApplication"
@@ -25,5 +28,9 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+      <!-- notifee 포그라운드 서비스. targetSdk 34+ 는 서비스 타입 명시가 필수입니다. -->
+      <service
+        android:name="app.notifee.core.ForegroundService"
+        android:foregroundServiceType="dataSync" />
     </application>
 </manifest>

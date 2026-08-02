@@ -3,6 +3,7 @@
  */
 
 import {
+  alarmStartsWithin,
   DEFAULT_ALARM,
   formatAlarmDays,
   formatMinutesOfDay,
@@ -57,6 +58,25 @@ describe('isAlarmActiveAt', () => {
     expect(isAlarmActiveAt(overnight, monday(23, 30))).toBe(true);
     expect(isAlarmActiveAt(overnight, monday(0, 30))).toBe(true);
     expect(isAlarmActiveAt(overnight, monday(12, 0))).toBe(false);
+  });
+});
+
+describe('alarmStartsWithin', () => {
+  test('리드 타임 안에 시작하면 true 다', () => {
+    expect(alarmStartsWithin(alarm(), monday(6, 30), 60)).toBe(true);
+    expect(alarmStartsWithin(alarm(), monday(6, 59), 60)).toBe(true);
+  });
+
+  test('이미 시작했거나 너무 이르면 false 다', () => {
+    expect(alarmStartsWithin(alarm(), monday(7, 0), 60)).toBe(false);
+    expect(alarmStartsWithin(alarm(), monday(5, 59), 60)).toBe(false);
+  });
+
+  test('꺼져 있거나 요일이 다르면 false 다', () => {
+    expect(alarmStartsWithin(alarm({ enabled: false }), monday(6, 30), 60)).toBe(
+      false,
+    );
+    expect(alarmStartsWithin(alarm(), sunday(6, 30), 60)).toBe(false);
   });
 });
 

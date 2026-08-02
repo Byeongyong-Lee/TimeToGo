@@ -66,7 +66,8 @@ src/
 ├─ config/env.ts   useMockApi 플래그, TAGO 베이스 URL, 인증키, 타임아웃
 ├─ hooks/          useAsync (로딩·에러·refetch), useNow (1초 틱)
 ├─ navigation/     RootNavigator, 화면 파라미터 타입
-├─ notifications/  notifier (notifee 래퍼), useArrivalAlarms (폴링 스케줄러)
+├─ notifications/  notifier (notifee 래퍼), alarmEngine (틱 로직),
+│                  foregroundService (Android 백그라운드), useArrivalAlarms (수명 관리)
 ├─ screens/        Favorites(홈), StopSearch(정류장 검색), StopRoutes(노선 선택),
 │                  FavoriteAlarm(알림 세부 설정), Settings
 ├─ store/          zustand 스토어 (favoritesStore, persist v1)
@@ -115,12 +116,16 @@ import { api } from '@/api/client';
 
 ### 푸시 알림 (notifee)
 
-`useArrivalAlarms` 훅(App.tsx 에서 마운트)이 30초 기본 틱으로 돌면서, 활성 상태이고 알림 주기가 지난 즐겨찾기의 도착정보를 조회해 조건(남은 시간 ≤ N분)이 맞으면 `@notifee/react-native` 로 로컬 푸시를 띄웁니다.
+알림 판단 로직은 `alarmEngine.tickAlarms()` 하나입니다: 활성 상태이고 알림 주기(30초/1분)가 지난 즐겨찾기의 도착정보를 조회해, 남은 시간 ≤ N분이면 `@notifee/react-native` 로 로컬 푸시를 띄웁니다. 알림 id = 즐겨찾기 id 라서 같은 노선 알림은 쌓이지 않고 갱신됩니다. 첫 알림 시점에 시스템 권한을 요청합니다.
 
-- 알림 id = 즐겨찾기 id 라서 같은 노선 알림은 쌓이지 않고 갱신됩니다
-- 첫 알림 시점에 시스템 알림 권한을 요청합니다 (Android 13+ `POST_NOTIFICATIONS` 매니페스트 등록됨)
-- **앱이 떠 있는 동안만 동작합니다.** OS 가 백그라운드 JS 타이머를 멈추기 때문에, 화면을 끈 상태의 알림은 Android 포그라운드 서비스(또는 서버 푸시)가 필요합니다 — 다음 단계
-- 네이티브 모듈이라 설치 후 `npm run android` 로 앱을 다시 빌드해야 합니다 (Metro 리로드만으로는 안 됨). iOS 는 macOS 에서 `pod install` 필요
+플랫폼별 실행 방식:
+
+- **Android — 포그라운드 서비스.** `useArrivalAlarms` 가 "활성 시간대이거나 60분 안에 시작"이면 상시 알림("버스 도착 확인 중")을 띄운 포그라운드 서비스를 올리고, 서비스 안에서 30초 틱이 돕니다. 덕분에 **앱이 백그라운드거나 화면이 꺼져도 알림이 옵니다.** 시간대가 끝나면 서비스가 스스로 내려갑니다. 서비스 본체는 `index.js` 에서 등록합니다.
+  - 매니페스트: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC` 권한 + `app.notifee.core.ForegroundService` (`dataSync` 타입, targetSdk 34+ 필수)
+  - 한계: 앱 프로세스가 완전히 죽은 상태에서 정해진 시간에 스스로 깨어나는 예약 실행은 미지원. 활성 시간대 앞뒤로 앱을 한 번 열면 서비스가 이어받습니다. (완전 자동화는 AlarmManager 트리거나 서버 푸시가 필요)
+- **iOS — 인앱 폴링.** 포그라운드 서비스 개념이 없어 앱이 떠 있는 동안만 알림이 동작합니다. macOS 에서 `pod install` 후 빌드 필요.
+
+네이티브 모듈이라 설치·매니페스트 변경 후에는 `npm run android` 로 재빌드해야 합니다 (Metro 리로드만으로는 안 됨).
 
 ### 공공데이터포털 API 주의점
 
