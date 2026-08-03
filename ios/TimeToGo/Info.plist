@@ -33,6 +33,21 @@
 		<false/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
+		<!--
+		  서울시 버스 API(ws.bus.go.kr)는 HTTPS 를 지원하지 않습니다 (443 포트가
+		  닫혀 있음). 이 도메인 하나만 평문을 허용하고 나머지는 ATS 를 유지합니다.
+		  TAGO(apis.data.go.kr)는 https 라 해당 없습니다.
+		-->
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>ws.bus.go.kr</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<false/>
+			</dict>
+		</dict>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>

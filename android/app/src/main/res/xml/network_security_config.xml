@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  릴리스 빌드의 네트워크 정책.
+
+  서울시 버스 API(ws.bus.go.kr)는 HTTPS 를 지원하지 않습니다. 443 포트가 닫혀
+  있어 https 로는 접속 자체가 안 되고, http 로만 응답합니다. 그래서 이 도메인
+  하나만 평문을 허용하고 나머지는 전부 HTTPS 를 강제합니다.
+
+  주의: 이 도메인으로는 인증키가 URL 에 평문으로 실려 나갑니다. API 구조상
+  피할 수 없습니다. TAGO(apis.data.go.kr)는 https 로 호출하므로 해당 없습니다.
+
+  디버그 빌드는 src/debug/res/xml/network_security_config.xml 이 이 파일을
+  덮어씁니다. (Metro 번들러가 평문 http 로 붙기 때문)
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">ws.bus.go.kr</domain>
+    </domain-config>
+</network-security-config>

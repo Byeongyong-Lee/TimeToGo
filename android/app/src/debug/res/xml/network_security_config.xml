@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  디버그 빌드 전용. 같은 이름의 main 리소스를 덮어씁니다.
+
+  Metro 번들러는 평문 http 로 붙고(에뮬레이터 10.0.2.2, 실기기는 PC 의 LAN IP)
+  주소가 환경마다 달라서, 디버그에서는 평문을 전부 허용합니다.
+  기존 동작(usesCleartextTraffic 이 디버그에서 true)과 같습니다.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
