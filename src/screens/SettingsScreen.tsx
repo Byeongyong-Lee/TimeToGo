@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 
+import CitySelect from '@/components/CitySelect';
 import Screen from '@/components/Screen';
 import { env } from '@/config/env';
 import { selectFavorites, useFavoritesStore } from '@/store/favoritesStore';
@@ -20,6 +21,13 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
+      <View style={styles.section}>
+        <CitySelect label="정류장을 검색할 지역" />
+        <Text style={styles.help}>
+          이미 등록한 즐겨찾기는 지역을 바꿔도 그대로 유지됩니다.
+        </Text>
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.label}>등록된 노선</Text>
         <Text style={styles.value}>{favorites.length}개</Text>
@@ -112,6 +120,11 @@ const styles = StyleSheet.create({
   label: {
     ...typography.caption,
     color: colors.textMuted,
+  },
+  help: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
   },
   value: {
     ...typography.body,

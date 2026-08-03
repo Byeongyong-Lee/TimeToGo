@@ -79,5 +79,8 @@ yarn-error.log
 .env.*
 !.env.example
 
+# 공공데이터포털 인증키 (로컬 전용)
+src/config/serviceKey.ts
+
 # bkit plugin runtime state
 .bkit/

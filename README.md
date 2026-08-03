@@ -17,6 +17,16 @@ React Native 0.86.2 / React 19 / TypeScript 기반. React Native Community CLI �
 npm install
 ```
 
+### 인증키 설정 (필수)
+
+`src/config/serviceKey.ts` 는 gitignore 돼 있어 클론 직후에는 없습니다. 없으면 빌드가 실패합니다.
+
+```bash
+cp src/config/serviceKey.example.ts src/config/serviceKey.ts
+```
+
+복사한 파일에 공공데이터포털 **Decoding 키**를 채우세요. 키가 없으면 `src/config/env.ts` 의 `useMockApi` 를 `true` 로 두면 목데이터로 실행됩니다.
+
 ### Android
 
 ```bash

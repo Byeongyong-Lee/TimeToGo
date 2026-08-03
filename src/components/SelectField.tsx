@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   FlatList,
   Modal,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
+  View,
   type ViewStyle,
 } from 'react-native';
 
@@ -21,6 +23,9 @@ type Props<T> = {
   value: T;
   options: SelectOption<T>[];
   onChange: (value: T) => void;
+  /** 옵션이 많을 때 모달 상단에 검색창을 띄웁니다. */
+  searchable?: boolean;
+  searchPlaceholder?: string;
   style?: ViewStyle;
 };
 
@@ -37,15 +42,35 @@ export default function SelectField<T>({
   value,
   options,
   onChange,
+  searchable = false,
+  searchPlaceholder = '검색',
   style,
 }: Props<T>) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
 
   const selected = options.find(option => option.value === value);
+
+  // 공백을 무시하고 부분일치로 거릅니다. ("대전 광역시" 로도 걸리도록)
+  const visible = useMemo(() => {
+    const normalized = query.trim().replace(/\s/g, '');
+    if (!searchable || !normalized) {
+      return options;
+    }
+    return options.filter(option =>
+      option.label.replace(/\s/g, '').includes(normalized),
+    );
+  }, [options, query, searchable]);
+
   const selectedIndex = Math.max(
-    options.findIndex(option => option.value === value),
+    visible.findIndex(option => option.value === value),
     0,
   );
+
+  const close = () => {
+    setOpen(false);
+    setQuery('');
+  };
 
   return (
     <>
@@ -56,7 +81,9 @@ export default function SelectField<T>({
         onPress={() => setOpen(true)}
         style={({ pressed }) => [styles.field, pressed && styles.pressed, style]}
       >
-        <Text style={styles.fieldLabel}>{selected?.label ?? String(value)}</Text>
+        <Text style={styles.fieldLabel} numberOfLines={1}>
+          {selected?.label ?? String(value)}
+        </Text>
         <Text style={styles.chevron}>▾</Text>
       </Pressable>
 
@@ -64,22 +91,42 @@ export default function SelectField<T>({
         visible={open}
         transparent
         animationType="fade"
-        onRequestClose={() => setOpen(false)}
+        onRequestClose={close}
       >
-        <Pressable style={styles.overlay} onPress={() => setOpen(false)}>
+        <Pressable style={styles.overlay} onPress={close}>
           {/* 시트 내부 터치가 오버레이 닫기로 전파되지 않도록 감쌉니다. */}
           <Pressable style={styles.sheet} onPress={() => {}}>
             <Text style={styles.sheetTitle}>{label}</Text>
+
+            {searchable ? (
+              <View style={styles.searchBox}>
+                <TextInput
+                  style={styles.search}
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder={searchPlaceholder}
+                  placeholderTextColor={colors.textMuted}
+                  autoCorrect={false}
+                  clearButtonMode="while-editing"
+                />
+              </View>
+            ) : null}
+
             <FlatList
-              data={options}
+              data={visible}
               keyExtractor={(_, index) => String(index)}
-              initialScrollIndex={selectedIndex}
+              keyboardShouldPersistTaps="handled"
+              // 목록이 걸러진 상태에서는 저장된 위치로 점프하지 않습니다.
+              initialScrollIndex={visible.length > 0 ? selectedIndex : undefined}
               getItemLayout={(_, index) => ({
                 length: ITEM_HEIGHT,
                 offset: ITEM_HEIGHT * index,
                 index,
               })}
               style={styles.list}
+              ListEmptyComponent={
+                <Text style={styles.empty}>검색 결과가 없습니다.</Text>
+              }
               renderItem={({ item }) => {
                 const isSelected = item.value === value;
                 return (
@@ -88,7 +135,7 @@ export default function SelectField<T>({
                     accessibilityState={{ selected: isSelected }}
                     onPress={() => {
                       onChange(item.value);
-                      setOpen(false);
+                      close();
                     }}
                     style={({ pressed }) => [
                       styles.item,
@@ -129,6 +176,7 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text,
     fontVariant: ['tabular-nums'],
+    flexShrink: 1,
   },
   chevron: {
     ...typography.caption,
@@ -156,6 +204,26 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+  },
+  searchBox: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  search: {
+    height: 44,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    fontSize: 16,
+    color: colors.text,
+    backgroundColor: colors.surface,
+  },
+  empty: {
+    ...typography.body,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: spacing.lg,
   },
   list: {
     flexGrow: 0,

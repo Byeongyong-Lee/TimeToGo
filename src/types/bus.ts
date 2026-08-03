@@ -9,6 +9,29 @@
 /** 지자체 도시코드. TAGO 의 도시코드 목록 조회로 얻습니다. */
 export type CityCode = number;
 
+/**
+ * TAGO 가 지원하는 지자체.
+ *
+ * 주의: 이 목록에 서울(11)은 없습니다. 서울 버스는 TAGO 가 아니라
+ * 서울시 별도 오픈API(TOPIS)를 써야 합니다.
+ */
+export type City = {
+  code: CityCode;
+  name: string;
+};
+
+/**
+ * 서울특별시.
+ *
+ * TAGO 도시코드 목록에 서울은 없어서, 표준 행정구역 코드(11)를 그대로 씁니다.
+ * 이 코드의 정류장은 TAGO 가 아니라 서울시 별도 API(ws.bus.go.kr)로 조회합니다.
+ */
+export const SEOUL_CITY_CODE: CityCode = 11;
+
+export function isSeoul(cityCode: CityCode): boolean {
+  return cityCode === SEOUL_CITY_CODE;
+}
+
 /** 정류소 */
 export type BusStop = {
   /** 정류소 ID (TAGO: nodeid) */
