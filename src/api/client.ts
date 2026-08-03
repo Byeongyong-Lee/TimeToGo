@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance } from 'axios';
 
+import { SeoulBusError, toSeoulErrorMessage } from '@/api/seoulClient';
 import { env } from '@/config/env';
 
 /**
@@ -71,8 +72,16 @@ export function unwrapItems<T>(data: TagoResponse<T>): T[] {
   return Array.isArray(item) ? item : [item];
 }
 
-/** 화면에 바로 보여줄 수 있는 에러 메시지로 정규화합니다. */
+/**
+ * 화면에 바로 보여줄 수 있는 에러 메시지로 정규화합니다.
+ *
+ * 화면(useAsync)은 어느 제공자에서 온 에러인지 모르므로, 여기서 서울시 쪽
+ * 에러도 같이 받아 넘깁니다.
+ */
 export function toErrorMessage(error: unknown): string {
+  if (error instanceof SeoulBusError) {
+    return toSeoulErrorMessage(error);
+  }
   if (error instanceof TagoError) {
     if (error.code === '30' || error.code === '31') {
       return '인증키가 올바르지 않거나 사용 기한이 지났습니다.';

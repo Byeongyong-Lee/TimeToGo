@@ -11,6 +11,7 @@ import {
 } from '@/store/settingsStore';
 import { colors, spacing, typography } from '@/theme';
 import type { City, CityCode } from '@/types/bus';
+import { isSeoul, SEOUL_CITY } from '@/types/bus';
 
 type Props = {
   label?: string;
@@ -32,11 +33,14 @@ export default function CitySelect({ label = '지역', style }: Props) {
   const { data, error } = useAsync<City[]>(() => getCityCodes(), []);
 
   // 목록을 못 받았으면 현재 지역 하나만 있는 목록으로 대체합니다.
-  const cities = useMemo<City[]>(
-    () =>
-      data && data.length > 0 ? data : [{ code: cityCode, name: cityName }],
-    [data, cityCode, cityName],
-  );
+  // 서울은 TAGO 목록에 없어서 맨 앞에 직접 넣습니다. (@/types/bus 의 SEOUL_CITY)
+  const cities = useMemo<City[]>(() => {
+    const base =
+      data && data.length > 0 ? data : [{ code: cityCode, name: cityName }];
+    return base.some(city => isSeoul(city.code))
+      ? base
+      : [SEOUL_CITY, ...base];
+  }, [data, cityCode, cityName]);
 
   const options = useMemo(
     () => cities.map(city => ({ label: city.name, value: city.code })),

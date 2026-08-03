@@ -28,6 +28,9 @@ export type City = {
  */
 export const SEOUL_CITY_CODE: CityCode = 11;
 
+/** 도시 목록(TAGO)에 서울이 없어서, 지역 선택에 직접 끼워넣는 항목입니다. */
+export const SEOUL_CITY: City = { code: SEOUL_CITY_CODE, name: '서울특별시' };
+
 export function isSeoul(cityCode: CityCode): boolean {
   return cityCode === SEOUL_CITY_CODE;
 }
